@@ -1,0 +1,4 @@
+[submodule "make/postconditions"]
+	path = make/postconditions
+	url = https://github.com/your-org/go-postconditions.git
+	branch = main

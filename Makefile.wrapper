@@ -1,0 +1,4 @@
+# Wrapper Makefile for submodule usage
+# This allows parent repos to use: make -f make/postconditions/Makefile.wrapper check-sanity
+
+include Makefile
