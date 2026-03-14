@@ -131,10 +131,10 @@ lint: ## Full golangci-lint run (uses .golangci.yml)
 #   FILES=""                     # optional: files/dirs to scope the run
 #   SANITY_JSON=.sanity.json     # where JSON lands for report-sanity
 #   SANITY_BUILD_TAGS=...        # build tags for sanity runs
-#   SANITY_NO_CONFIG=1           # 1 = ignore .golangci.yml (default), 0 = use it
+#   SANITY_NO_CONFIG=0           # 0 = use .golangci.yml (default), 1 = ignore it
 SANITY_JSON ?= .sanity.json
 SANITY_BUILD_TAGS ?= acceptance,generative,integration,unit
-SANITY_NO_CONFIG ?= 1
+SANITY_NO_CONFIG ?= 0
 
 SANITY_LINTERS = -E dupl -E gocyclo -E goconst -E unparam -E ineffassign -E nestif
 SANITY_BASE    = --max-issues-per-linter=0 --max-same-issues=0 --sort-results --timeout=5m --build-tags=$(SANITY_BUILD_TAGS)
@@ -145,7 +145,7 @@ endif
 
 # 1) CHECK: human-friendly output, fails on issues.
 .PHONY: check-sanity
-check-sanity: ## Run sanity checks (FILES=... optional). Ignores .golangci.yml by default.
+check-sanity: ## Run sanity checks (FILES=... optional). Uses .golangci.yml by default.
 	@$(GOLANGCI) run $(SANITY_CFG_FLAGS) $(SANITY_LINTERS) $(SANITY_BASE) --issues-exit-code=1 \
 	  --out-format=colored-line-number $(if $(FILES),$(FILES),)
 	@echo "Target complexity budget (gocyclo): $(GOCYCLO_MAX)"
