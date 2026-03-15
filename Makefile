@@ -184,24 +184,37 @@ check-sanity: ## Run sanity checks (FILES=... optional). Uses .golangci.yml by d
 report-sanity: ## Summarize sanity issues (FILES=... optional)
 	@$(GOLANGCI) run $(SANITY_CFG_FLAGS) $(SANITY_LINTERS) $(SANITY_BASE) --issues-exit-code=0 \
 	  --out-format json $(if $(FILES),$(FILES),) > $(SANITY_JSON)
-	@command -v jq >/dev/null || { echo "jq is required for report-sanity"; exit 1; }
-	@echo "== Issues by linter =="; \
-	jq -r '.Issues | group_by(.FromLinter) | map({linter: .[0].FromLinter, count: length}) | sort_by(-.count) | (["linter","count"], (.[] | [ .linter, (.count|tostring) ])) | @tsv' $(SANITY_JSON) | column -t
-	@echo; echo "== Top files by issue count (top 10) =="; \
-	jq -r '.Issues | group_by(.Pos.Filename) | map({file: .[0].Pos.Filename, count: length}) | sort_by(-.count)[0:10] | (["file","count"], (.[] | [ .file, (.count|tostring) ])) | @tsv' $(SANITY_JSON) | column -t
-	@echo; echo "== Worst cyclomatic complexity (top 10) =="; \
-	jq -r '.Issues | map(select(.FromLinter=="gocyclo")) | map({file: .Pos.Filename, line: .Pos.Line, text: .Text, n: ( .Text | capture("(?<n>[0-9]+)"; "m")? | .n // "0") | tonumber}) | sort_by(-.n)[0:10] | (["complexity","file:line","message"], (.[] | [ ( .n|tostring ), ( .file + ":" + (.line|tostring) ), .text ])) | @tsv' $(SANITY_JSON) | column -t
-	@echo; echo "== Duplicate code (dupl) hot-spots (top 10) =="; \
-	jq -r '.Issues | map(select(.FromLinter=="dupl")) | group_by(.Pos.Filename) | map({file: .[0].Pos.Filename, count: length}) | sort_by(-.count)[0:10] | (["file","dupl_issues"], (.[] | [ .file, (.count|tostring) ])) | @tsv' $(SANITY_JSON) | column -t
+	@command -v jq >/dev/null || { printf 'jq is required for report-sanity\n'; exit 1; }
+	@count=$$(jq '.Issues | length' $(SANITY_JSON)); \
+	if [ "$$count" -eq 0 ]; then \
+	  printf '$(GREEN)✓ No issues found$(RESET)\n'; \
+	else \
+	  printf '$(YELLOW)Found %d issues:$(RESET)\n\n' "$$count"; \
+	  printf '$(CYAN)Issues by linter:$(RESET)\n'; \
+	  jq -r '.Issues | group_by(.FromLinter) | map({linter: .[0].FromLinter, count: length}) | sort_by(-.count) | .[] | "  \(.linter): \(.count)"' $(SANITY_JSON); \
+	  printf '\n$(CYAN)Top files (max 10):$(RESET)\n'; \
+	  jq -r '.Issues | group_by(.Pos.Filename) | map({file: .[0].Pos.Filename, count: length}) | sort_by(-.count)[0:10] | .[] | "  \(.file): \(.count)"' $(SANITY_JSON); \
+	  cyclo=$$(jq '.Issues | map(select(.FromLinter=="gocyclo")) | length' $(SANITY_JSON)); \
+	  if [ "$$cyclo" -gt 0 ]; then \
+	    printf '\n$(CYAN)Cyclomatic complexity (max 10):$(RESET)\n'; \
+	    jq -r '.Issues | map(select(.FromLinter=="gocyclo")) | sort_by(.Pos.Filename, .Pos.Line)[0:10] | .[] | "  \(.Pos.Filename):\(.Pos.Line) - \(.Text)"' $(SANITY_JSON); \
+	  fi; \
+	  dupl=$$(jq '.Issues | map(select(.FromLinter=="dupl")) | length' $(SANITY_JSON)); \
+	  if [ "$$dupl" -gt 0 ]; then \
+	    printf '\n$(CYAN)Duplicate code (max 10):$(RESET)\n'; \
+	    jq -r '.Issues | map(select(.FromLinter=="dupl")) | group_by(.Pos.Filename) | map({file: .[0].Pos.Filename, count: length}) | sort_by(-.count)[0:10] | .[] | "  \(.file): \(.count) instances"' $(SANITY_JSON); \
+	  fi; \
+	fi
 
 # Compatibility aliases (old names keep working)
-.PHONY: sanity sanity-file sanity-json sanity-file-json sanity-summary sanity-file-summary
+.PHONY: sanity sanity-file sanity-json sanity-file-json sanity-summary sanity-file-summary sanity-report
 sanity: check-sanity
 sanity-file: check-sanity
 sanity-json: report-sanity
 sanity-file-json: report-sanity
 sanity-summary: report-sanity
 sanity-file-summary: report-sanity
+sanity-report: report-sanity
 
 # --- Tests & Coverage ---
 .PHONY: test
