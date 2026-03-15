@@ -211,11 +211,10 @@ cover-check: ## Enforce total coverage floor ($(COVER_FLOOR)%)
 	awk -v p="$$pct" -v f="$(COVER_FLOOR)" 'BEGIN{exit (p+0 >= f+0)?0:1}'
 
 # --- find-func-refs (repo-wide) ---
-FFR ?= $(HOME)/go/bin/find-func-refs
+FFR = $(GO_RUN_TOOLS) github.com/joejstuart/find-func-refs
 
 .PHONY: ffr
 ffr: ## Repo-wide unused function scan (via find-func-refs -all)
-	@test -x "$(FFR)" || { echo "find-func-refs not found at $(FFR)"; exit 1; }
 	@echo "Checking unused funcs (repo-wide)"
 	@$(FFR) -all -root . -snippet || true
 

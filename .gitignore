@@ -1,1 +1,29 @@
+# Sanity check output
 .sanity.json
+
+# Coverage files
+coverage.out
+coverage-*.out
+*.coverprofile
+
+# Build artifacts
+/bin/
+/dist/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go workspace (if used locally)
+go.work
+go.work.sum
+
+# Claude Code local memory
+.claude/

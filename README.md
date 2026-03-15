@@ -6,7 +6,7 @@ This repository provides Makefile targets and Go tools for validating code chang
 
 ### Adding as Submodule
 ```bash
-git submodule add https://github.com/your-org/go-postconditions.git make/postconditions
+git submodule add https://github.com/joejstuart/go-postconditions.git make/postconditions
 git submodule update --init --recursive
 ```
 
@@ -71,7 +71,7 @@ Runs the basic sanity check **plus** unused function detection using `find-func-
 - All benefits of `make sanity`
 - **Additional**: Detects unused functions in specific files
 - **Shows**: Function usage across the entire codebase
-- **Requires**: `find-func-refs` tool installed (`go install github.com/konflux-ci/enterprise-contract/tools/find-func-refs@latest`)
+- **Included**: `find-func-refs` is bundled in `tools/go.mod`
 
 **Example Output:**
 ```
@@ -189,11 +189,8 @@ gofmt -l ./cmd/validate/image.go
 
 ### Find Unused Functions
 ```bash
-# Check for unused functions in a specific file
-make ffr FILE=./cmd/validate/image.go
-
-# This requires find-func-refs to be installed:
-# go install github.com/konflux-ci/enterprise-contract/tools/find-func-refs@latest
+# Check for unused functions repo-wide
+make ffr
 ```
 
 ## 🧪 Testing

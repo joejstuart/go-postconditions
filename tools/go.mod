@@ -1,4 +1,4 @@
-module github.com/go-postconditions/tools
+module github.com/joejstuart/go-postconditions/tools
 
 go 1.24.4
 
@@ -8,6 +8,8 @@ require (
 	github.com/go-critic/go-critic v0.14.0
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/gordonklaus/ineffassign v0.2.0
+	github.com/joejstuart/find-func-refs v0.0.0-20251025033410-1f491eeb924b
+	github.com/kisielk/errcheck v1.9.0
 	github.com/mgechev/revive v1.12.0
 	github.com/mibk/dupl v1.0.0
 	github.com/nakabonne/nestif v0.3.1
@@ -116,7 +118,6 @@ require (
 	github.com/jjti/go-spancheck v0.6.4 // indirect
 	github.com/julz/importas v0.2.0 // indirect
 	github.com/karamaru-alpha/copyloopvar v1.2.1 // indirect
-	github.com/kisielk/errcheck v1.9.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.6 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.10 // indirect

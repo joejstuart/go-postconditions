@@ -1,0 +1,68 @@
+# Default golangci-lint configuration for go-postconditions
+# This provides sensible defaults; parent repos can override with their own .golangci.yml
+
+run:
+  timeout: 5m
+  build-tags:
+    - acceptance
+    - generative
+    - integration
+    - unit
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # Additional quality linters
+    - dupl
+    - gocyclo
+    - goconst
+    - nestif
+    - revive
+    - unparam
+    - misspell
+
+linters-settings:
+  gocyclo:
+    min-complexity: 12
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  nestif:
+    min-complexity: 4
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+        disabled: true
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unreachable-code
+  misspell:
+    locale: US
+
+issues:
+  exclude-use-default: true
+  max-issues-per-linter: 0
+  max-same-issues: 0
