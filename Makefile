@@ -26,56 +26,59 @@ ifdef CI
 GOFLAGS += -mod=readonly
 endif
 
-# Colors for output
+# Colors for output (use printf, not echo)
 GREEN  := \033[32m
 YELLOW := \033[33m
 CYAN   := \033[36m
 RESET  := \033[0m
+OK     = @printf '$(GREEN)✓ %s$(RESET)\n'
+WARN   = @printf '$(YELLOW)%s$(RESET)\n'
+INFO   = @printf '$(CYAN)%s$(RESET)\n'
 
 .PHONY: help
 help: ## Show available targets
-	@awk 'BEGIN{FS=":.*##";print "\nTargets:"} /^[a-zA-Z0-9_.-]+:.*?##/ {printf "  $(CYAN)%-22s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN{FS=":.*##";printf "\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*?##/ {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # --- Formatting (non-mutating) ---
 .PHONY: fmt
 fmt: ## Verify gofmt -s (non-mutating)
 	@changed="$$(gofmt -s -l .)"; \
 	if [ -n "$$changed" ]; then \
-	  echo "$(YELLOW)Files need formatting:$(RESET)"; echo "$$changed" | sed 's/^/  /'; \
+	  printf '$(YELLOW)Files need formatting:$(RESET)\n'; echo "$$changed" | sed 's/^/  /'; \
 	  echo "Run: make fmt-fix"; exit 1; \
 	fi
-	@echo "$(GREEN)✓ fmt$(RESET)"
+	$(OK) 'fmt'
 
 .PHONY: fmt-fix
 fmt-fix: ## Apply gofmt -s (local use)
 	@gofmt -s -w .
-	@echo "$(GREEN)✓ fmt-fix$(RESET)"
+	$(OK) 'fmt-fix'
 
 # --- Static analysis and security (single-tool runners) ---
 .PHONY: vet
 vet: ## go vet
 	@go vet $(GOFLAGS) $(TEST_PKGS)
-	@echo "$(GREEN)✓ vet$(RESET)"
+	$(OK) 'vet'
 
 .PHONY: staticcheck
 staticcheck: ## staticcheck (includes gosimple)
 	@$(GO_RUN_TOOLS) honnef.co/go/tools/cmd/staticcheck $(TEST_PKGS)
-	@echo "$(GREEN)✓ staticcheck$(RESET)"
+	$(OK) 'staticcheck'
 
 .PHONY: revive
 revive: ## revive (style linter)
 	@$(GO_RUN_TOOLS) github.com/mgechev/revive $(TEST_PKGS)
-	@echo "$(GREEN)✓ revive$(RESET)"
+	$(OK) 'revive'
 
 .PHONY: errcheck
 errcheck: ## errcheck (error handling)
 	@$(GO_RUN_TOOLS) github.com/kisielk/errcheck $(TEST_PKGS)
-	@echo "$(GREEN)✓ errcheck$(RESET)"
+	$(OK) 'errcheck'
 
 .PHONY: vuln
 vuln: ## govulncheck (module + packages)
 	@$(GO_RUN_TOOLS) golang.org/x/vuln/cmd/govulncheck $(TEST_PKGS)
-	@echo "$(GREEN)✓ vuln$(RESET)"
+	$(OK) 'vuln'
 
 # --- Extra "Go patterns" linters (standalone CLIs) ---------------------------
 # NOTE: These are optional deeper checks. Many overlap with golangci-lint linters used in sanity.
@@ -84,72 +87,72 @@ vuln: ## govulncheck (module + packages)
 .PHONY: gocyclo
 gocyclo: ## gocyclo (cyclomatic complexity) - fails if > GOCYCLO_MAX
 	@$(GO_RUN_TOOLS) github.com/fzipp/gocyclo/cmd/gocyclo -over $(GOCYCLO_MAX) $(GO_SOURCES)
-	@echo "$(GREEN)✓ gocyclo (max: $(GOCYCLO_MAX))$(RESET)"
+	$(OK) 'gocyclo (max: $(GOCYCLO_MAX))'
 
 .PHONY: nestif
 nestif: ## nestif (nested if statements)
 	@$(GO_RUN_TOOLS) github.com/nakabonne/nestif/cmd/nestif .
-	@echo "$(GREEN)✓ nestif$(RESET)"
+	$(OK) 'nestif'
 
 .PHONY: dupl
 dupl: ## dupl (duplicate code detection)
 	@$(GO_RUN_TOOLS) github.com/mibk/dupl .
-	@echo "$(GREEN)✓ dupl$(RESET)"
+	$(OK) 'dupl'
 
 .PHONY: goconst
 goconst: ## goconst (repeated string/number literals)
 	@$(GOLANGCI) run --disable-all --enable=goconst ./...
-	@echo "$(GREEN)✓ goconst$(RESET)"
+	$(OK) 'goconst'
 
 .PHONY: misspell
 misspell: ## misspell (spelling checker; errors only)
 	@$(GO_RUN_TOOLS) github.com/client9/misspell/cmd/misspell -error -locale US $(GO_SOURCES)
-	@echo "$(GREEN)✓ misspell$(RESET)"
+	$(OK) 'misspell'
 
 .PHONY: unparam
 unparam: ## unparam (unused parameters)
 	@$(GO_RUN_TOOLS) mvdan.cc/unparam $(TEST_PKGS)
-	@echo "$(GREEN)✓ unparam$(RESET)"
+	$(OK) 'unparam'
 
 .PHONY: ineffassign
 ineffassign: ## ineffassign (ineffective assignments)
 	@$(GO_RUN_TOOLS) github.com/gordonklaus/ineffassign .
-	@echo "$(GREEN)✓ ineffassign$(RESET)"
+	$(OK) 'ineffassign'
 
 .PHONY: gosec
 gosec: ## gosec (security issues)
 	@$(GO_RUN_TOOLS) github.com/securego/gosec/v2/cmd/gosec -quiet ./...
-	@echo "$(GREEN)✓ gosec$(RESET)"
+	$(OK) 'gosec'
 
 .PHONY: gocritic
 gocritic: ## gocritic (style and performance issues)
 	@$(GO_RUN_TOOLS) github.com/go-critic/go-critic/cmd/gocritic check ./...
-	@echo "$(GREEN)✓ gocritic$(RESET)"
+	$(OK) 'gocritic'
 
 .PHONY: gocognit
 gocognit: ## gocognit (cognitive complexity) - fails if > COGNIT_MAX
 	@$(GO_RUN_TOOLS) github.com/uudashr/gocognit/cmd/gocognit -over $(COGNIT_MAX) $(GO_SOURCES)
-	@echo "$(GREEN)✓ gocognit (max: $(COGNIT_MAX))$(RESET)"
+	$(OK) 'gocognit (max: $(COGNIT_MAX))'
 
 .PHONY: funlen
 funlen: ## funlen (function length)
 	@$(GO_RUN_TOOLS) github.com/ultraware/funlen/cmd/funlen ./...
-	@echo "$(GREEN)✓ funlen$(RESET)"
+	$(OK) 'funlen'
 
 .PHONY: gofumpt
 gofumpt: ## gofumpt (stricter gofmt; non-mutating)
 	@changed="$$($(GO_RUN_TOOLS) mvdan.cc/gofumpt -l $(GO_SOURCES))"; \
 	if [ -n "$$changed" ]; then \
-	  echo "$(YELLOW)Files need gofumpt:$(RESET)"; echo "$$changed" | sed 's/^/  /'; \
+	  printf '$(YELLOW)Files need gofumpt:$(RESET)\n'; echo "$$changed" | sed 's/^/  /'; \
 	  exit 1; \
 	fi
-	@echo "$(GREEN)✓ gofumpt$(RESET)"
+	$(OK) 'gofumpt'
 
 # --- Lint (keeps using .golangci.yml exactly as-is) --------------------------
 .PHONY: lint
 lint: ## Full golangci-lint run (uses .golangci.yml)
 	@$(GOLANGCI) run --sort-results $(if $(CI),--timeout=10m)
-	@echo "$(GREEN)✓ lint$(RESET)"
+	$(OK) 'lint'
 
 # --------- Sanity: checks & reports (isolated from .golangci.yml) ------------
 
@@ -174,7 +177,7 @@ endif
 check-sanity: ## Run sanity checks (FILES=... optional). Uses .golangci.yml by default.
 	@$(GOLANGCI) run $(SANITY_CFG_FLAGS) $(SANITY_LINTERS) $(SANITY_BASE) --issues-exit-code=1 \
 	  --out-format=colored-line-number $(if $(FILES),$(FILES),)
-	@echo "$(GREEN)✓ check-sanity passed (gocyclo budget: $(GOCYCLO_MAX))$(RESET)"
+	$(OK) 'check-sanity (gocyclo budget: $(GOCYCLO_MAX))'
 
 # 2) REPORT: summarized output, never fails; uses JSON internally.
 .PHONY: report-sanity
@@ -204,7 +207,7 @@ sanity-file-summary: report-sanity
 .PHONY: test
 test: ## Run tests with race + coverage
 	@go test $(GOFLAGS) -race -covermode=atomic -coverprofile=$(COVER_OUT) $(TEST_PKGS)
-	@echo "$(GREEN)✓ test$(RESET)"
+	$(OK) 'test'
 
 .PHONY: cover-merge
 cover-merge: ## Merge coverage-*.out -> $(COVER_OUT)
@@ -220,12 +223,12 @@ cover-merge: ## Merge coverage-*.out -> $(COVER_OUT)
 .PHONY: cover-check
 cover-check: ## Enforce total coverage floor ($(COVER_FLOOR)%)
 	@set -euo pipefail; \
-	test -f "$(COVER_OUT)" || { echo "$(YELLOW)Missing $(COVER_OUT) — run 'make test' first$(RESET)"; exit 1; }; \
+	test -f "$(COVER_OUT)" || { printf '$(YELLOW)Missing $(COVER_OUT) — run make test first$(RESET)\n'; exit 1; }; \
 	pct=$$(go tool cover -func=$(COVER_OUT) | awk '/^total:/ {gsub("%","",$$3); print $$3}'); \
 	if awk -v p="$$pct" -v f="$(COVER_FLOOR)" 'BEGIN{exit (p+0 >= f+0)?0:1}'; then \
-	  echo "$(GREEN)✓ cover-check: $$pct% (floor: $(COVER_FLOOR)%)$(RESET)"; \
+	  printf '$(GREEN)✓ cover-check: %s%% (floor: $(COVER_FLOOR)%%)$(RESET)\n' "$$pct"; \
 	else \
-	  echo "$(YELLOW)✗ cover-check: $$pct% < $(COVER_FLOOR)% floor$(RESET)"; exit 1; \
+	  printf '$(YELLOW)✗ cover-check: %s%% < $(COVER_FLOOR)%% floor$(RESET)\n' "$$pct"; exit 1; \
 	fi
 
 # --- find-func-refs (repo-wide) ---
@@ -233,46 +236,46 @@ FFR = $(GO_RUN_TOOLS) github.com/joejstuart/find-func-refs
 
 .PHONY: ffr
 ffr: ## Repo-wide unused function scan (via find-func-refs -all)
-	@echo "Scanning for unused functions..."
+	@printf 'Scanning for unused functions...\n'
 	@$(FFR) -all -root . -snippet
-	@echo "$(GREEN)✓ ffr$(RESET)"
+	$(OK) 'ffr'
 
 # --- Aggregate "Go patterns" suite -------------------------------------------
 .PHONY: go-patterns-lint
 go-patterns-lint: ## Extra Go pattern checks (run locally / pre-PR; slower than sanity)
 go-patterns-lint: revive gocyclo nestif dupl goconst misspell unparam ineffassign gosec gocritic gocognit funlen gofumpt
-	@echo "$(GREEN)✓ go-patterns-lint (all checks passed)$(RESET)"
+	$(OK) 'go-patterns-lint (all passed)'
 
 # --- Stage bundles -----------------------------------------------------------
 .PHONY: quick
 quick: fmt check-sanity ## Small/local changes: fast guard
-	@echo "$(GREEN)✓ quick (all checks passed)$(RESET)"
+	$(OK) 'quick (all passed)'
 
 .PHONY: refactor
 refactor: fmt check-sanity ffr go-patterns-lint ## Structural changes: add unused scan + Go patterns
-	@echo "$(GREEN)✓ refactor (all checks passed)$(RESET)"
+	$(OK) 'refactor (all passed)'
 
 .PHONY: behavior
 behavior: fmt check-sanity analysis test cover-check ## Behavior change: full quality + tests + coverage
-	@echo "$(GREEN)✓ behavior (all checks passed)$(RESET)"
+	$(OK) 'behavior (all passed)'
 
 .PHONY: prepr
 prepr: analysis test cover-check go-patterns-lint ## Pre-PR stabilization (adds deeper Go patterns)
-	@echo "$(GREEN)✓ prepr (all checks passed)$(RESET)"
+	$(OK) 'prepr (all passed)'
 
 # --- CI / default ------------------------------------------------------------
 .PHONY: analysis
 analysis: fmt vet staticcheck revive errcheck vuln check-sanity ## Non-mutating quality gates
-	@echo "$(GREEN)✓ analysis (all checks passed)$(RESET)"
+	$(OK) 'analysis (all passed)'
 
 .PHONY: ci
 ci: test analysis cover-check ## Full CI suite (non-mutating)
-	@echo "$(GREEN)✓ ci (all checks passed)$(RESET)"
+	$(OK) 'ci (all passed)'
 
 # --- Optional perf smoke (won't fail CI) ---
 .PHONY: bench-smoke
 bench-smoke: ## Run quick benchmarks (informational)
 	@go test $(GOFLAGS) -run=^$$ -bench=. -benchmem ./... || true
-	@echo "$(CYAN)bench-smoke complete$(RESET)"
+	$(INFO) 'bench-smoke complete'
 
 .DEFAULT_GOAL := ci
